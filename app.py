@@ -17,7 +17,7 @@ zekrhaye_hafte = {
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/images'
 
-number_of_posts = len([f for f in os.listdir('static/images/') if os.path.isfile(os.path.join('static/images/', f))])
+number_of_posts = len([f for f in os.listdir('static/images/') if os.path.isfile(os.path.join('static/images/', f))])-1
 
 def load_db():
     with open('database.json', encoding='utf-8') as file:
@@ -90,7 +90,6 @@ def index():
         selected_post=None
         jdatetime.set_locale(jdatetime.FA_LOCALE)
         rooz = jdatetime.date.today().strftime('%A')
-        print(rooz)
         zekr_rooz = zekrhaye_hafte[rooz]
     return render_template('index.html', selected_post=selected_post, rooz=rooz, zekr_rooz=zekr_rooz)
 
