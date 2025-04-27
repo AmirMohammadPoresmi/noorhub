@@ -2,7 +2,7 @@
     <div class="col-10 col-sm-6 col-md-4 col-lg-3">
         <a href="?id={{ post[0] }}" class="link-underline-dark">
             <div class="card text-center mb-3" style="width: 18rem;">
-                <img src="{{ url_for('static', filename='images/'+post[0]+'.'+post[1]) }}" class="card-img-top img-thumbnail image-card-custom" alt="مشکل در باز کردن عکس!">
+                <img src="{{ post[1] }}" class="card-img-top img-thumbnail image-card-custom" alt="مشکل در باز کردن عکس!">
                 <span class="emoji">{{ post[4] }}👁</span>
                 <div class="card-body">
                     <h4 class="card-title overflow-hidden text-truncate">{{ post[2] }}</h4>

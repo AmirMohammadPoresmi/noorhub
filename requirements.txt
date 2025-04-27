@@ -1,4 +1,6 @@
 Flask
-Werkzeug
 jdatetime
 gunicorn
+cloudinary
+python-dotenv
+requests

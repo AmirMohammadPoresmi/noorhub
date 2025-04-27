@@ -1,8 +1,29 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import json
 import os
-from werkzeug.utils import secure_filename
 import jdatetime
+import cloudinary
+import cloudinary.uploader
+from dotenv import load_dotenv
+from io import BytesIO
+import requests
+from requests.auth import HTTPBasicAuth
+
+load_dotenv()
+# CLOUDINARY_CLOUD_NAME
+# CLOUDINARY_API_KEY
+# CLOUDINARY_API_SECRET
+# CLOUDINARY_DB_NAME
+
+# power by cloudinary.com
+cloudinary.config( 
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
+    api_key = os.getenv("CLOUDINARY_API_KEY"), 
+    api_secret = os.getenv("CLOUDINARY_API_SECRET"), 
+    secure = True
+)
+
+app = Flask(__name__)
 
 zekrhaye_hafte = {
     'شنبه':'یا رَبِّ الْعالَمِین',
@@ -14,18 +35,43 @@ zekrhaye_hafte = {
     'جمعه':'الّلهُمَّ صَلِّ عَلَی مُحَمَّدٍ وَآلِ مُحَمَّدٍ و عجل فرجهم'
 }
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/images'
-
-number_of_posts = len([f for f in os.listdir('static/images/') if os.path.isfile(os.path.join('static/images/', f))])-1
+db_version = None
+def get_url_db():
+    return f"http://res.cloudinary.com/{os.getenv('CLOUDINARY_CLOUD_NAME')}/raw/upload/{'v'+str(db_version)+'/' if db_version else ''}{os.getenv('CLOUDINARY_DB_NAME')}.json"
 
 def load_db():
-    with open('database.json', encoding='utf-8') as file:
-        return json.loads(file.read())
-    
+    response = requests.get(get_url_db())
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return response.status_code
+
 def write_db(new_data:dict):
-    with open('database.json', '+w', encoding='utf-8') as file:
-        file.write(json.dumps(new_data))
+    global db_version
+    file = BytesIO(json.dumps(new_data).encode('utf-8'))
+    result = cloudinary.uploader.upload(
+        file,
+        resource_type="raw",
+        public_id="database",
+        format='json'
+    )
+    db_version = result['version']
+    return result
+
+number_of_posts = 0
+try:
+    number_of_posts = len(load_db()['images'])
+except:
+    write_db({'images':[]})
+if not db_version:
+    response = requests.get(
+        f"https://api.cloudinary.com/v1_1/{os.getenv('CLOUDINARY_CLOUD_NAME')}/resources/raw/upload/{os.getenv('CLOUDINARY_DB_NAME')}.json",
+        auth=HTTPBasicAuth(os.getenv("CLOUDINARY_API_KEY"), os.getenv("CLOUDINARY_API_SECRET"))
+    )
+    if response.status_code == 200:
+        db_version = response.json()['version']
+    else:
+        print('error to found db version :'+str(response.status_code))
 
 def load_image(id:int):
     return load_db()['images'][id]
@@ -43,14 +89,18 @@ def add_view(id:int):
     db['images'][id][4] += 1
     write_db(db)
 
-def add_post(format_:str, title:str='hi', publisher:str='none'):
+def add_post(title:str, publisher:str, file):
     global number_of_posts
     jdatetime.set_locale(jdatetime.FA_LOCALE)
     db = load_db()
+    result = cloudinary.uploader.upload(
+        file,
+        public_id = str(number_of_posts)
+    )
     db['images'].append(
         [
-            str(len(db['images'])),
-            format_,
+            number_of_posts,
+            result['secure_url'],
             title,
             publisher,
             0,
@@ -59,25 +109,19 @@ def add_post(format_:str, title:str='hi', publisher:str='none'):
     )
     write_db(db)
     number_of_posts += 1
+    return number_of_posts - 1
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         if 'file' not in request.files:
             return redirect(url_for('index'))
-
         file = request.files['file']
         if file.filename == '':
             return redirect(url_for('index'))
-        filename = secure_filename(file.filename)
-        format_ = os.path.splitext(filename)[1][1:]
-        id_ = str(len(load_db()['images']))
-        filename = id_ + '.' + format_
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         title = request.form['title']
         publisher = request.form['publisher']
-        add_post(format_, title, publisher)
-        return redirect(url_for('index',id=id_))
+        return redirect(url_for('index',id=add_post(title, publisher, file)))
 
     post_id = request.args.get("id")
     if post_id:
@@ -87,10 +131,10 @@ def index():
         rooz = None
         zekr_rooz = None
     else:
-        selected_post=None
         jdatetime.set_locale(jdatetime.FA_LOCALE)
         rooz = jdatetime.date.today().strftime('%A')
         zekr_rooz = zekrhaye_hafte[rooz]
+        selected_post=None
     return render_template('index.html', selected_post=selected_post, rooz=rooz, zekr_rooz=zekr_rooz)
 
 @app.route('/load')
