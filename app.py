@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from io import BytesIO
 import requests
 from requests.auth import HTTPBasicAuth
+import random
 
 load_dotenv()
 # CLOUDINARY_CLOUD_NAME
@@ -146,6 +147,10 @@ def load_posts():
         return jsonify({'html': render_template('load.html',posts = posts), 'has_more': has_more})
     except Exception as e:
         return jsonify({'html': e, 'has_more': True})
+
+@app.route('/random')
+def random_number():
+    return str(random.random())
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

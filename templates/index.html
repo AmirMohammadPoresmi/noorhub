@@ -45,6 +45,17 @@
             margin-right: .5em;
           }
     </style>
+    {% if selected_post %}
+        <meta property="og:title" content="{{ selected_post[2] }}" />
+        {% if selected_post[3] == "" %}
+            <meta property="og:description" content="یادگار {{ selected_post[5] }}" />
+        {% else %}
+            <meta property="og:description" content="عکسی از {{ selected_post[3] }} یادگار {{ selected_post[5] }}" />
+        {% endif %}
+        <meta property="og:image" content="{{ selected_post[1] }}" />
+        <meta property="og:url" content="{{ request.url }}" />
+    {% else %}
+    {% endif %}
 </head>
 <body class="bg-dark-subtle">
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
