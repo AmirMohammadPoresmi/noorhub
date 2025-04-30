@@ -61,9 +61,14 @@ def write_db(new_data:dict):
 
 number_of_posts = 0
 try:
-    number_of_posts = len(load_db()['images'])
-except:
-    write_db({'images':[]})
+    temp = load_db()
+    if type(temp) == int:
+        print(temp)
+    else:
+        number_of_posts = len(load_db()['images'])
+except Exception as e:
+    print(e)
+    #write_db({'images':[]})
 if not db_version:
     response = requests.get(
         f"https://api.cloudinary.com/v1_1/{os.getenv('CLOUDINARY_CLOUD_NAME')}/resources/raw/upload/{os.getenv('CLOUDINARY_DB_NAME')}.json",
